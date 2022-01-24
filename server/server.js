@@ -2,13 +2,12 @@ const express = require('express');
 
 // import ApolloServer
 const { ApolloServer } = require('apollo-server-express');
-// const { ApolloServerPluginLandingPageGraphQLPlayground } = require('apollo-server-core');
+const { ApolloServerPluginLandingPageGraphQLPlayground } = require('apollo-server-core');
 
 // import authMiddleware
 const { authMiddleware } = require('./utils/auth');
 
 const db = require('./config/connection');
-const routes = require('./routes');
 const path = require('path');
 
 // import our typeDefs and resolvers
@@ -22,9 +21,9 @@ const startServer = async () => {
   const server = new ApolloServer({ 
     typeDefs, 
     resolvers, 
-    // plugins: [
-    //   ApolloServerPluginLandingPageGraphQLPlayground
-    // ],
+    plugins: [
+      ApolloServerPluginLandingPageGraphQLPlayground
+    ],
     context: authMiddleware 
   });
 
@@ -53,7 +52,6 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/build/index.html'));
 });
 
-app.use(routes);
 
 db.once('open', () => {
   app.listen(PORT, () => console.log(`API server running on port ${PORT}`));
