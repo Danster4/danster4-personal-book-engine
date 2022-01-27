@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Jumbotron, Container, CardColumns, Card, Button } from 'react-bootstrap';
 import { useQuery, useMutation } from '@apollo/client';
 import { REMOVE_BOOK } from '../utils/mutations';
 import { GET_ME } from '../utils/queries';
 import Auth from '../utils/auth';
-import { removeBookId } from '../utils/localStorage';
+import { removeBookId, saveBookIds, getSavedBookIds } from '../utils/localStorage';
 
 
 const SavedBooks = () => {
@@ -13,6 +13,28 @@ const SavedBooks = () => {
   const [removeBook] = useMutation(REMOVE_BOOK);
 
   // create function that accepts the book's mongo _id value as param and deletes the book from the database
+  useEffect(() => {
+    return () => {
+      // if no books are saved to localStorage extract them and save to localStorage
+      const usersBookDB = [];
+      const savedBookIds = getSavedBookIds();
+      if (savedBookIds.length === 0 && userData?.savedBooks.length > 0) {
+        const userBookData = userData?.savedBooks;
+
+        for (let i = 0; i < userBookData?.length; i++) {
+          let userBD = userBookData[i]?.bookId;
+          if (userBD) {
+            // pull user's savedBooks' bookIds and store them in localStorage
+            usersBookDB.push(userBD);
+          }
+        }
+
+        saveBookIds(usersBookDB);
+      }
+    };
+  });
+  
+  
   const handleDeleteBook = async (bookId) => {
     const token = Auth.loggedIn() ? Auth.getToken() : null;
 
@@ -22,7 +44,7 @@ const SavedBooks = () => {
 
     try {
       await removeBook({
-        variables: { bookId: bookId }
+        variables: { bookId }
       });
 
       removeBookId(bookId);

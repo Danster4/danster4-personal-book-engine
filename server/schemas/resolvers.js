@@ -11,7 +11,17 @@ const resolvers = {
         return userData;
       }
       throw new AuthenticationError("Not logged in");
-    }
+    },
+    // get all users
+    users: async () => {
+      return User.find()
+        .select('-__v -password')
+  },
+    // get user by `username`
+    user: async (parent, { username }) => {
+      return User.findOne({ username })
+        .select('-__v -password')
+  }
   },
   
   Mutation: {
@@ -57,11 +67,11 @@ const resolvers = {
     },
 
     // if a user removes a book, it will look up the bookId and remove it from the array
-    removeBook: async (parent, { input }, context) => {
+    removeBook: async (parent, { bookId }, context) => {
       if (context.user) {
         const updatedUser = await User.findOneAndUpdate(
           { _id: context.user._id },
-          { $pull: { savedBooks: { bookId: bookId } } },
+          { $pull: { savedBooks: { bookId } } },
           { new: true }
         );
     

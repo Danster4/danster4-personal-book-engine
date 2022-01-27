@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Jumbotron, Container, Col, Form, Button, Card, CardColumns } from 'react-bootstrap';
-import { useMutation } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client';
 import Auth from '../utils/auth';
 import { SAVE_BOOK } from "../utils/mutations";
 import { GET_ME } from "../utils/queries";
@@ -18,30 +18,47 @@ const SearchBooks = () => {
   const [savedBookIds, setSavedBookIds] = useState(getSavedBookIds());
 
   // // saveBook mutation 
-  // const [ saveBook ] = useMutation(SAVE_BOOK);
+  const [ saveBook ] = useMutation(SAVE_BOOK);
+
+  const { data } = useQuery(GET_ME);
 
   // set up useEffect hook to save `savedBookIds` list to localStorage on component unmount
   // learn more here: https://reactjs.org/docs/hooks-effect.html#effects-with-cleanup
   useEffect(() => {
-    return () => saveBookIds(savedBookIds);
+    return () => {
+      if (savedBookIds.length === 0 && data?.me.savedBooks.length > 0) {
+        const userBookData = data?.me.savedBooks;
+
+        for (let i = 0; i < userBookData?.length; i++) {
+          let userBD = userBookData[i]?.bookId;
+          if (userBD) {
+            // pull user's savedBooks' bookIds and store them in localStorage
+            setSavedBookIds([ ...savedBookIds, userBD]);
+          }
+        }
+      }
+    
+
+      saveBookIds(savedBookIds);
+    }
   });
 
-  const [saveBook] = useMutation(SAVE_BOOK, {
-    update(cache, { data: { saveBook } }) {
-      try {
-        // update me object's cache
-        // could potentially not exist yet, so wrap in a try/catch
-        const { me } = cache.readQuery({ query: GET_ME });
-        // prepend newest added book to savedBooks array
-        cache.writeQuery({
-          query: GET_ME,
-          data: { me: { ...me, savedBooks: [...me.savedBooks, saveBook] } },
-        });
-      } catch (e) {
-        console.error(e);
-      }
-    },
-  });
+  // const [ saveBook ] = useMutation(SAVE_BOOK, {
+  //   update(cache, { data: { saveBook } }) {
+  //     try {
+  //       // update me object's cache
+  //       // could potentially not exist yet, so wrap in a try/catch
+  //       const { me } = cache.readQuery({ query: GET_ME });
+  //       // prepend newest added book to savedBooks array
+  //       cache.writeQuery({
+  //         query: GET_ME,
+  //         data: { me: { ...me, savedBooks: [...me.savedBooks, saveBook] } },
+  //       });
+  //     } catch (e) {
+  //       console.error(e);
+  //     }
+  //   },
+  // });
 
   // create method to search for books and set state on form submit
   const handleFormSubmit = async (event) => {
